@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE_TARNAME@
+Description: Example C++ library.
+Version: @PACKAGE_VERSION@
+URL: http://www.openismus.com/documents/linux/building_libraries/building_libraries.shtml
+Libs: -L${libdir} -l@EXAMPLE_FULL_NAME@
+Cflags: -I${includedir}/@EXAMPLE_FULL_NAME@ -I${libdir}/@EXAMPLE_FULL_NAME@/include

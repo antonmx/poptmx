@@ -1,0 +1,14 @@
+AC_INIT([LibExample], [0.4], [murrayc@openismus.com], [example])
+AM_INIT_AUTOMAKE([-Wall subdir-objects])
+AC_CONFIG_HEADERS([config.h])
+AC_PROG_CXX
+AC_PROG_CXX_C_O
+AC_PROG_INSTALL
+
+LT_INIT([disable-static])
+AC_SUBST([EXAMPLE_SO_VERSION], [1:2:0])
+AC_SUBST([EXAMPLE_API_VERSION], [1.0])
+AC_SUBST([EXAMPLE_FULL_NAME], [$PACKAGE_TARNAME-$EXAMPLE_API_VERSION])
+
+AC_CONFIG_FILES([Makefile example-1.0.pc])
+AC_OUTPUT

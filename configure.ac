@@ -1,0 +1,10 @@
+AC_INIT(libpoptmx, 1.0)
+AM_INIT_AUTOMAKE()
+AC_PROG_CXX
+AC_PROG_CXX_C_O
+AC_PROG_INSTALL
+
+LT_INIT([disable-static])
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
