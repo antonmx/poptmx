@@ -111,9 +111,9 @@ class POPTMX_API Err{
 public:
   /// Error severity
   enum ErrTp {
-	WARN,                        ///< Warning
-	ERR,                         ///< Error
-	FATAL                        ///< Fatal error
+  WARN,                        ///< Warning
+  ERR,                         ///< Error
+  FATAL                        ///< Fatal error
   } ;
 
 private:
@@ -125,7 +125,7 @@ public:
 
   /// Constructor
   Err(ErrTp _terr, const std::string & mod, const std::string & msg);
-  void report() const ;			///< Reports the error
+  void report() const ;     ///< Reports the error
 
 };
 
@@ -162,12 +162,12 @@ warn(const std::string & mod, const std::string & msg){
 
 /// Type of the element in the table of the known options.
 typedef enum {
-  OPTION,						///< Option
-  ARGUMENT,						///< Argument
-  NOTE,							///< Note
-  MAN,							///< Manual page
-  // ALIAS,						//< Alias to the option(s)
-  PROC							///< Post-parse processing function
+  OPTION,           ///< Option
+  ARGUMENT,           ///< Argument
+  NOTE,             ///< Note
+  MAN,              ///< Manual page
+  // ALIAS,           //< Alias to the option(s)
+  PROC              ///< Post-parse processing function
 } Kind;
 
 
@@ -176,35 +176,37 @@ class POPTMX_API Option {
 
 public:
 
-  void * val;					///< Pointer to the value the parser to update.
-  int counter;					///< Number of parser already invoked.
-  bool isarray;					///< Tells if the entry represents the array.
+  void * val;         ///< Pointer to the value the parser to update.
+  int counter;          ///< Number of parser already invoked.
+  bool isarray;         ///< Tells if the entry represents the array.
 
   /// Type of the entry.
-  Kind kind;					///< Type of the entry.
+  Kind kind;          ///< Type of the entry.
+  std::string dflt;             ///< Default value of the option/argument.
 
   /// Function which converts the Option::acquire into the Option::val.
   int (*convert)(void*, const std::string &);
 
-  char   char_name;				///< Short name of the option.
-  std::string long_name;		///< Long name of the option / argument name.
-  std::string arg_desc;			///< Description of the input type.
-  std::string short_desc;		///< Short description.
-  std::string long_desc;		///< Long description.
+  char   char_name;       ///< Short name of the option.
+  std::string long_name;    ///< Long name of the option / argument name.
+  std::string arg_desc;     ///< Description of the input type.
+  std::string short_desc;   ///< Short description.
+  std::string long_desc;    ///< Long description.
 
   Option( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
-		  const char _char_name, const std::string & _long_name,
-		  const std::string & _short_desc, const std::string & _long_desc,
-		  const std::string & _arg_desc, bool _isarray=false);
+      const char _char_name, const std::string & _long_name,
+      const std::string & _short_desc, const std::string & _long_desc,
+      const std::string & _arg_desc, const std::string & _dflt,
+          bool _isarray);
 
-  bool parse(const std::string & acquire);	///< Parser: invokes Option::convert.
+  bool parse(const std::string & acquire);  ///< Parser: invokes Option::convert.
   /// Description of the entry: general form;
   std::string delim_opt(const std::string & delim, bool keep_format=false) const ;
   std::string desc(bool keep_format=false) const ; ///< Prints the description.
-  bool require_arg() const;		///< Tells if the entry requires an argument for parsing.
+  bool require_arg() const;   ///< Tells if the entry requires an argument for parsing.
 
-  void usage() const ;	///< Usage.
-  void Usage() const ;	///< Verbose usage.
+  void usage() const ;  ///< Usage.
+  void Usage() const ;  ///< Verbose usage.
 
   void help(const int descwidth=0, const int argwidth=0) const; ///< Help.
 
@@ -233,7 +235,7 @@ class POPTMX_API OptionTable {
 
 private:
 
-  mutable std::list<Option> options;	///< The table containing all options, arguments, etc.
+  mutable std::list<Option> options;  ///< The table containing all options, arguments, etc.
   typedef std::list<Option>::iterator ListO; ///< Just to short the text
 
   /// Short description of the program. If the table is included into
@@ -254,12 +256,12 @@ private:
   /// Program name (as invoked).
   std::string general_name;
 
-  bool helpme;					///< To be used for the help, if none is provided.
-  bool useme;					///< To be used for the usage, if none is provided.
-  bool beverb;				///< To be used for the verbose, if none is provided.
-  bool * auto_help;				///< Indicates that autohelp was used.
-  bool * auto_use;				///< Indicates that autouse was used.
-  bool * auto_verb;				///< Indicates that autoverb was used.
+  bool helpme;          ///< To be used for the help, if none is provided.
+  bool useme;         ///< To be used for the usage, if none is provided.
+  bool beverb;        ///< To be used for the verbose, if none is provided.
+  bool * auto_help;       ///< Indicates that autohelp was used.
+  bool * auto_use;        ///< Indicates that autouse was used.
+  bool * auto_verb;       ///< Indicates that autoverb was used.
  
 
   ListO find(const void * _val) const; ///< Finds entry by value
@@ -268,76 +270,81 @@ private:
   ListO find() const; ///< Finds first parse-able argument.
   ListO has_array() const; ///< True if the table has an array argument.
 
-  OptionTable & add(const Option & opt);	///< Adds the entry in to the table
+  OptionTable & add(const Option & opt);  ///< Adds the entry in to the table
 
   static const std::string manLN; ///< The key phrase which triggers the man()
+
+  static const std::string pntrMark; ///< Prefixes and suffixes the printed pointer in the text.
+
+  /// Replaces all pointer marks.
+  void replacePointers(std::string & str);
 
 public:
 
 
   /// Constructor
   OptionTable(const std::string & _general_desc="",
-			  const std::string & _general_long_desc="",
-			  const std::string & _general_synopsis="");
+        const std::string & _general_long_desc="",
+        const std::string & _general_synopsis="");
 
   /// Incorporates preexisting option table into the table.
   OptionTable &
-	add(const OptionTable & _val);
+  add(const OptionTable & _val);
 
-  /// Abstract interface to add the option into the table.
+  /// Abstract interface to add an entry into the table.
   OptionTable &
-	add( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
-		 const char _char_name, const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc,
-		 const std::string & _arg_desc, bool _is_array);
+  add( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
+     const char _char_name, const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc,
+     const std::string & _arg_desc, const std::string & _dflt, bool _is_array);
 
   /// Abstract interface to add the argument into the table.
   OptionTable &
-	add( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
-		 const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc,
-		 const std::string & _arg_desc, bool _is_array);
+  add( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
+     const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc,
+     const std::string & _arg_desc, const std::string & _dflt, bool _is_array);
 
   /// Simplified interface to add the option into the table.
   template<class BClass> OptionTable &
-	add( Kind _kind, BClass * _val,
-		 const char _char_name, const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc);
+  add( Kind _kind, BClass * _val,
+     const char _char_name, const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
   /// Simplified interface to add multiple-appearing option into the table.
   template<class BClass> inline OptionTable &
-	add( Kind _kind, std::vector<BClass> * _val,
-		 const char _char_name, const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc);
+  add( Kind _kind, std::vector<BClass> * _val,
+     const char _char_name, const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
   /// Simplified interface to add the argument into the table.
   template<class BClass> OptionTable &
-	add( Kind _kind, BClass * _val,
-		 const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc);
+  add( Kind _kind, BClass * _val,
+     const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
   /// Simplified interface to add multiple-appearing argument into the table.
   template<class BClass> inline OptionTable &
-	add( Kind _kind, std::vector<BClass> * _val,
-		 const std::string & _long_name,
-		 const std::string & _short_desc, const std::string & _long_desc);
+  add( Kind _kind, std::vector<BClass> * _val,
+     const std::string & _long_name,
+     const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
   /// Adds note or man.
   OptionTable &
-	add( Kind _kind, const std::string & _short_desc, const std::string & _long_desc="");
+  add( Kind _kind, const std::string & _short_desc, const std::string & _long_desc="");
 
   OptionTable &
-	add_verbose(bool *_beverb=0);	///< Includes standard verbose option.
+  add_verbose(bool *_beverb=0); ///< Includes standard verbose option.
 
   OptionTable &
-	add_help(bool *_helpme=0); ///< Includes standard help option.
+  add_help(bool *_helpme=0); ///< Includes standard help option.
   
   OptionTable &
-	add_usage(bool *_useme=0); ///< Includes standard usage option.
+  add_usage(bool *_useme=0); ///< Includes standard usage option.
 
   /// Includes all three standard options;
   OptionTable &
-	add_standard_options(bool *_beverb=0, bool *_helpme=0, bool *_useme=0);
+  add_standard_options(bool *_beverb=0, bool *_helpme=0, bool *_useme=0);
 
 
 
@@ -372,15 +379,15 @@ public:
   /// Returns the description of the entry with the value.
   std::string desc(const void * _val) const ;
 
-  int size() const;				///< Size of the table
+  int size() const;       ///< Size of the table
 
-  void usage() const;	///< Constructs the usage message.
-  void Usage() const;	///< Constructs the verbose usage message.
-  void help() const;		///< Constructs the help message.
-  void Help() const;		///< Constructs the verbose help message.
-  void man() const;		///< Manages man pages
+  void usage() const; ///< Constructs the usage message.
+  void Usage() const; ///< Constructs the verbose usage message.
+  void help() const;    ///< Constructs the help message.
+  void Help() const;    ///< Constructs the verbose help message.
+  void man() const;   ///< Manages man pages
 
-  std::string name() const ;	///< Returns the command name as invoked.
+  std::string name() const ;  ///< Returns the command name as invoked.
   void name(const std::string & _name); ///< Sets the command name.
 
 };
@@ -469,12 +476,12 @@ conversion(void* _val, const std::string & in){
 ///
 template<class BClass> inline OptionTable &
 OptionTable::add( Kind _kind,   BClass * _val,
-				  const char _char_name, const std::string & _long_name,
-				  const std::string & _short_desc, const std::string & _long_desc){
+          const char _char_name, const std::string & _long_name,
+          const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != poptmx::OPTION )
-	throw_error("add option", "You've got the wrong add function for your kind.");
+  throw_error("add option", "You've got the wrong add function for your kind.");
   return add(_kind, _val, conversion<BClass>, _char_name, _long_name,
-			 _short_desc, _long_desc, type_desc(_val), false );
+       _short_desc, _long_desc, type_desc(_val), _dflt, false );
 }
 
 /// The interface to add into the table the argument which type has
@@ -489,12 +496,12 @@ OptionTable::add( Kind _kind,   BClass * _val,
 ///
 template<class BClass> inline OptionTable &
 OptionTable::add( Kind _kind, BClass * _val,
-				  const std::string & _long_name,
-				  const std::string & _short_desc, const std::string & _long_desc){
+          const std::string & _long_name,
+          const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != poptmx::ARGUMENT )
-	throw_error("add argument", "You've got the wrong add function for your kind.");
+  throw_error("add argument", "You've got the wrong add function for your kind.");
   return add(_kind, _val, conversion<BClass>, 0, _long_name,
-			 _short_desc, _long_desc, type_desc(_val), false );
+       _short_desc, _long_desc, type_desc(_val), _dflt, false );
 }
 
 
@@ -516,7 +523,7 @@ arr_conversion(void* _val, const std::string & in){
   BClass var;
   int returned = conversion<BClass>(&var, in);
   if (returned >= 0)
-	( (std::vector<BClass> *) _val ) ->push_back(var);
+  ( (std::vector<BClass> *) _val ) ->push_back(var);
   return returned;
 }
 
@@ -534,13 +541,13 @@ arr_conversion(void* _val, const std::string & in){
 ///
 template<class BClass> inline OptionTable &
 OptionTable::add( Kind _kind, std::vector<BClass> * _val,
-				  const char _char_name, const std::string & _long_name,
-				  const std::string & _short_desc, const std::string & _long_desc){
+          const char _char_name, const std::string & _long_name,
+          const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != OPTION )
-	throw_error("add option", "You've got the wrong add function for your kind.");
+  throw_error("add option", "You've got the wrong add function for your kind.");
   BClass var;
   return add(_kind, _val, arr_conversion<BClass>, _char_name, _long_name,
-			 _short_desc, _long_desc, type_desc(& var)+"...", true);
+       _short_desc, _long_desc, type_desc(& var)+"...", _dflt, true);
 }
 
 /// The interface to add the multi-acceptable argument into the table. The argument's
@@ -555,13 +562,13 @@ OptionTable::add( Kind _kind, std::vector<BClass> * _val,
 ///
 template<class BClass> inline OptionTable &
 OptionTable::add( Kind _kind, std::vector<BClass> * _val,
-				  const std::string & _long_name,
-				  const std::string & _short_desc, const std::string & _long_desc){
+          const std::string & _long_name,
+          const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != ARGUMENT )
-	throw_error("add argument", "You've got the wrong add function for your kind.");
+  throw_error("add argument", "You've got the wrong add function for your kind.");
   BClass var;
   return add( _kind, _val, arr_conversion<BClass>, 0, _long_name,
-			  _short_desc, _long_desc, type_desc(&var)+"...", true);
+        _short_desc, _long_desc, type_desc(&var)+"...", _dflt, true);
 }
 
 
