@@ -32,10 +32,14 @@
 
 #include<limits>
 #include<algorithm>
+#include<numeric>
 #include<errno.h>
 #include<string.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<cstdlib>
+#include<cmath>
+
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -76,11 +80,11 @@ lower(string str){
 /// @param mod   Sets CtasErr::module
 /// @param msg   Sets CtasErr::message
 ///
-Err::Err(Err::ErrTp _terr, const string & mod, const string & msg){
-  terr = _terr;
-  module = mod;
-  message = msg;
-}
+Err::Err(Err::ErrTp _terr, const string & mod, const string & msg)
+    : terr(_terr)
+    , module(mod)
+    , message(msg)
+{}
 
 /// \brief Prints the error into the standard error stream.
 void
@@ -149,18 +153,15 @@ get_terminal_width(){
 /// @return Array of the decomposed strings.
 ///
 static string
-print_table(const string & instr,
-            string::size_type space=string::npos) {
+print_table(const string & instr, string::size_type space=string::npos) {
 
+  if ( instr.empty() )
+    return string();
   if( space == string::npos)
     space=get_terminal_width();
 
   string out;
-  string::size_type idx=0, nidx=0, togo=0;
-
-  if ( instr.empty() )
-    return out;
-
+  string::size_type idx=0, nidx;
   while (idx != string::npos) {
 
     if ( nidx = instr.find('\n', idx),
@@ -218,7 +219,7 @@ prefix_out(const string & original, const string & prefix = "",
 
 
 
-static const int indent=2;    ///< Number of spaces for the indentation.
+static const int indent=2;		///< Number of spaces for the indentation.
 static const string sindent=string(indent, ' '); ///< Indenting string
 
 
@@ -266,7 +267,7 @@ Option::Option
   isarray(_isarray),
   counter(0)
 {
-  if ( ( kind == ARGUMENT || kind == OPTION ) && ( !val || !convert )  )
+  if ( ( kind == ARGUMENT || kind == OPTION ) && ( !val || !_convert )  )
     throw_error("construct option",
                 "Arguments and options must always have non-zero value"
                 " and conversion function.");
@@ -378,7 +379,10 @@ Option::Help() const {
   const int width = get_terminal_width();
 
   if (kind == OPTION) {
-    cout << sindent << delim_opt(", ") << sindent << arg_desc << endl;
+    cout << sindent << delim_opt(", ") << sindent << arg_desc;
+    if (!dflt.empty())
+      cout << "=" << dflt;
+    cout << endl;
     if ( ! short_desc.empty()) {
       prefix_out( print_table(short_desc, width-2*indent), sindent+sindent);
       cout << endl;
@@ -388,7 +392,10 @@ Option::Help() const {
       cout << endl;
     }
   } else if (kind == ARGUMENT) {
-    cout << sindent << "<" << long_name << sindent << "(" << arg_desc << ")>" << endl;
+    cout << sindent << "<" << long_name << sindent << "(" << arg_desc;
+    if (!dflt.empty())
+      cout << "=" << dflt;
+    cout << ")>" << endl;
     if ( ! short_desc.empty()) {
       prefix_out( print_table(short_desc, width-2*indent), sindent+sindent);
       cout << endl;
@@ -538,7 +545,7 @@ Option::parse(const string & acquire){
 
 
 
-typedef list<string>::const_iterator ListS; ///< Just to short the text
+typedef list<string>::const_iterator ListS;	///< Just to short the text
 
 
 
@@ -589,10 +596,8 @@ OptionTable::size() const {
 ///
 OptionTable::ListO
 OptionTable::find(const void * _val) const {
-  for (ListO icur = options.begin() ; icur != options.end() ; icur++)
-    if ( icur->val == _val)
-      return icur;
-  return options.end();
+  return find_if(options.begin(), options.end(),
+                 [&_val](const Option& opt){return opt.val == _val;});
 }
 
 /// Finds the entry in the options with the Option.char_name equal to _char_name.
@@ -605,11 +610,9 @@ OptionTable::ListO
 OptionTable::find(char _char_name) const {
   if ( ! _char_name )
     return options.end();
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
-    if ( icur->char_name == _char_name &&
-         ( icur->kind == ARGUMENT || icur->kind == OPTION ) )
-      return icur;
-  return options.end();
+  return find_if(options.begin(), options.end(),
+                 [&_char_name](const Option& opt){
+                   return opt.char_name == _char_name && ( opt.kind == ARGUMENT || opt.kind == OPTION );});
 }
 
 /// Finds the entry in the options with the Option.long_name equal to _long_name.
@@ -622,11 +625,9 @@ OptionTable::ListO
 OptionTable::find(const string & _long_name) const {
   if ( _long_name.empty() )
     return options.end();
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
-    if ( icur->long_name == _long_name &&
-         ( icur->kind == ARGUMENT || icur->kind == OPTION ) )
-      return icur;
-  return options.end();
+  return find_if(options.begin(), options.end(),
+                 [&_long_name](const Option& opt){
+                   return opt.long_name == _long_name && ( opt.kind == ARGUMENT || opt.kind == OPTION );});
 }
 
 /// Finds the first of the argument entries in the table which can take one
@@ -637,10 +638,8 @@ OptionTable::find(const string & _long_name) const {
 ///
 OptionTable::ListO
 OptionTable::find() const {
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
-    if ( icur->kind == ARGUMENT && ( icur->isarray || ! icur->counter ) )
-      return icur;
-  return options.end();
+  return find_if(options.begin(), options.end(),
+                 [](const Option& opt){return opt.kind == ARGUMENT && ( opt.isarray || ! opt.counter ) ; });
 }
 
 
@@ -652,13 +651,9 @@ OptionTable::find() const {
 ///
 OptionTable::ListO
 OptionTable::has_array() const {
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
-    if ( icur->kind == ARGUMENT && icur->isarray )
-      return icur;
-  return options.end();
+  return find_if(options.begin(), options.end(),
+                 [](const Option& opt){return opt.kind == ARGUMENT && opt.isarray; });
 }
-
-
 
 
 
@@ -668,7 +663,7 @@ OptionTable::parse(int argc, char *argv[]){
   // Reread all possible pointers.
   replacePointers(general_desc);
   replacePointers(general_long_desc);
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++) {
+  for (ListO icur=options.begin() ; icur != options.end() ; ++icur) {
     replacePointers(icur->short_desc);
     replacePointers(icur->long_desc);
   }
@@ -676,7 +671,7 @@ OptionTable::parse(int argc, char *argv[]){
   if ( !argv )
     throw_error("parse parameters", "Zero-pointer to the parameters' array.");
   if ( argc < 1 )
-    throw_error("parse parameters", "argc is not what it is meant to be.");
+    throw_error("parse parameters", "Zero argc.");
 
   const std::list<std::string> Argv(argv, argv+argc);
   const ListS cliend = Argv.end();
@@ -788,12 +783,8 @@ OptionTable::usage() const {
 
   cout << general_desc << endl
        << name();
-
-
-  for (ListO icur=options.begin() ; icur != options.end() ; ++icur) {
-    cout << " ";
-    icur->usage();
-  }
+  for_each(options.begin(), options.end(),
+           [](const Option& opt) { cout << ' '; opt.usage(); });
   cout << endl;
 
   if ( auto_help || auto_verb ) {
@@ -839,15 +830,16 @@ OptionTable::help() const {
   prefix_out(general_synopsis, sindent);
   cout << endl;
 
-  int descwidth=0, argwidth=0, curlen;
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++) {
+  int descwidth=0, argwidth=0;
+  for (ListO icur=options.begin() ; icur != options.end() ; ++icur) {
+    int curlen;
     if ( descwidth < (curlen = icur->desc(true).length() ) )
       descwidth = curlen;
     if ( argwidth  < (curlen = icur->arg_desc.length() ) )
       argwidth = curlen;
   }
 
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
+  for (ListO icur=options.begin() ; icur != options.end() ; ++icur)
     icur->help(descwidth, argwidth);
 
 }
@@ -861,7 +853,7 @@ OptionTable::Help() const {
   prefix_out(print_table(general_synopsis), sindent, true);
   cout << endl;
 
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++)
+  for (ListO icur=options.begin() ; icur != options.end() ; ++icur)
     icur->Help();
 
 }
@@ -872,10 +864,10 @@ OptionTable::Help() const {
 void
 OptionTable::man() const {
 
-  string version="";
-#ifdef VERSION
-  version=VERSION;
-#endif
+//  string version="";
+//#ifdef VERSION
+//  version=VERSION;
+//#endif
 
   string package="";
 #ifdef PACKAGE_STRING
@@ -903,7 +895,7 @@ OptionTable::man() const {
   prefix_out(general_long_desc, ".br\n",false);
   cout << endl;
 
-  for (ListO icur=options.begin() ; icur != options.end() ; icur++) {
+  for (ListO icur=options.begin() ; icur != options.end() ; ++icur) {
     cout << "./ START OPTION" << endl;
     icur->man();
     cout << "./ END OPTION" << endl
@@ -1039,7 +1031,7 @@ OptionTable::add( const OptionTable & _val ){
     add( NOTE, _val.general_desc, _val.general_long_desc);
   if ( ! _val.options.size() )
     warn("add table", "Empty table to add.");
-  for (ListO icur=_val.options.begin() ; icur != _val.options.end() ; icur++)
+  for (ListO icur=_val.options.begin() ; icur != _val.options.end() ; ++icur)
     add(*icur);
   return *this;
 }
@@ -1144,14 +1136,9 @@ OptionTable::has(const char _char_name) const {
 /// all entries were triggered.
 int
 OptionTable::count(const void * _val) const {
-
-  if ( ! _val ) {
-    int ret = 0;
-    for (ListO icur=options.begin() ; icur != options.end() ; icur++)
-      ret += icur->counter;
-    return ret;
-  }
-
+  if ( ! _val )
+    return accumulate(options.begin(), options.end(), 0,
+                      [](int sum, const Option& opt){return sum + opt.counter;});
   if (!has(_val))
     throw_error("check option", "Could not find the option in the table.");
   return find(_val)->counter;
@@ -1195,11 +1182,11 @@ OptionTable::replacePointers(std::string & str){
                   " the pointer from the string \""+str+"\".");
     if ( ! has(pntr) )
       throw_error("reread pointer", "Did not find requested pointer in the table.");
-    int size = str.find(pntrMark, pos+1);
-    if (size == string::npos)
+    int sz = str.find(pntrMark, pos+1);
+    if (sz == string::npos)
       throw_error("reread pointer", "Could not find end of the pointer in the string \""+str+"\".");
-    size += pntrMark.length() - pos ;
-    str.replace(pos, size, desc(pntr));
+    sz += pntrMark.length() - pos ;
+    str.replace(pos, sz, desc(pntr));
   }
 }
 
@@ -1343,68 +1330,53 @@ type_desc(unsigned char*){
 
 
 
-template<class BClass> static inline int
-_int_conversion(BClass * _val, const string & in) {
+template<class T,
+         class = typename std::enable_if< std::is_integral<T>::value &&
+                                          std::is_signed<T>::value >::type >
+long long int spec_conversion(const std::string & in, char ** tail) {
+  return strtoll(in.c_str(), tail, 0);
+}
 
-  char * tail = 0 ;
+template<class T,
+         class = typename std::enable_if< std::is_integral<T>::value &&
+                                          std::is_unsigned<T>::value >::type >
+unsigned long long int spec_conversion(const std::string & in, char ** tail) {
+  return strtoull(in.c_str(), tail, 0);
+}
 
-  errno = 0;
-  long int inval = strtol(in.c_str(), &tail, 0);
-  if (errno) {
-    warn_parse(type_desc(_val), in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse(type_desc(_val), in, "does not represent a short value");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse(type_desc(_val), in, "contains tail \"" + string(tail) + "\"");
-
-  if (inval < (numeric_limits<BClass>::min)() ||
-      inval > (numeric_limits<BClass>::max)() ) {
-    warn_parse(type_desc(_val), in,
-               "parsed integer value is out of the type range");
-    return -1;
-  }
-
-  *_val = (BClass) inval;
-  return 1;
+template<class T,
+         class = typename std::enable_if<std::is_floating_point<T>::value>::type>
+long double spec_conversion(const std::string & in, char ** tail) {
+  return strtold(in.c_str(), tail);
 }
 
 
-template<class BClass> static inline int
-_uint_conversion(BClass * _val, const string & in) {
-
+template<class T,
+         class = typename std::enable_if<std::is_arithmetic<T>::value>::type >
+bool num_conversion(T * _val, const std::string & in) {
+  const std::string modname="numeric conversion";
   char * tail = 0 ;
-
   errno = 0;
-  unsigned long int inval = strtoul(in.c_str(), &tail, 0);
-  if (errno) {
-    warn_parse(type_desc(_val), in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse(type_desc(_val), in, "does not represent a short value");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse(type_desc(_val), in, "contains tail \"" + string(tail) + "\"");
-
-  if (inval < (numeric_limits<BClass>::min)() ||
-      inval > (numeric_limits<BClass>::max)() ) {
-    warn_parse(type_desc(_val), in,
-               "parsed integer value is out of the type range");
-    return -1;
-  }
-
-  *_val = (BClass) inval;
-  return 1;
+  auto inval = spec_conversion<T>(in, &tail);
+  *_val = (T)(inval);
+  if (errno)
+    warn(modname, "Failed to convert string \""+in+"\": value overflow");
+  else if (tail == in.c_str())
+    warn(modname, "String \""+in+"\" does not represent a numeric value");
+  else if (tail && *tail)
+    warn(modname, "String \""+in+"\" contains tail \"" + std::string(tail) + "\".");
+  else if (std::is_integral<T>() && (
+             inval < std::numeric_limits<T>::min() ||
+             inval > std::numeric_limits<T>::max() ) )
+    warn(modname, "String \""+in+"\" contains integer value outside type range.");
+  else if (std::is_floating_point<T>() && (
+             inval > std::numeric_limits<T>::max() ||
+             ( inval != 0.0 && fabsl(inval) < std::numeric_limits<T>::min() ) ) )
+    warn(modname, "String \""+in+"\" contains float-point value outside type range.");
+  else
+    return true;
+  return false;
 }
-
-
 
 
 
@@ -1417,7 +1389,7 @@ _uint_conversion(BClass * _val, const string & in) {
 ///
 int
 _conversion(short * _val, const string & in){
-  return _int_conversion(_val,in);
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1438,7 +1410,7 @@ type_desc(short*){
 ///
 int
 _conversion(unsigned short * _val, const string & in){
-  return _uint_conversion(_val,in);
+  return num_conversion(_val,in);
 }
 
 /// Prints type name.
@@ -1461,7 +1433,7 @@ type_desc(unsigned short*){
 ///
 int
 _conversion(int * _val, const string & in){
-  return _int_conversion(_val,in);
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1483,7 +1455,7 @@ type_desc(int*){
 ///
 int
 _conversion(unsigned int * _val, const string & in){
-  return _uint_conversion(_val,in);
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1507,7 +1479,7 @@ type_desc(unsigned int*){
 ///
 int
 _conversion(long* _val, const string & in){
-  return _int_conversion(_val,in);
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1528,7 +1500,7 @@ type_desc(long*){
 ///
 int
 _conversion(unsigned long* _val, const string & in){
-  return _uint_conversion(_val,in);
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1550,33 +1522,7 @@ type_desc(unsigned long*){
 ///
 int
 _conversion(long long* _val, const string & in){
-
-  char * tail = 0 ;
-
-  errno = 0;
-  long long int inval = strtoll(in.c_str(), &tail, 0);
-  if (errno) {
-    warn_parse("long long", in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse("long long", in, "does not represent an integer");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse("long long", in, "contains tail \"" + string(tail) + "\"");
-
-  if (inval < numeric_limits<long long>::min() ||
-      inval > numeric_limits<long long>::max() ) {
-    warn_parse("long long", in,
-               "parsed integer _value is out of the type range");
-    return -1;
-  }
-
-  *_val = (long long) inval;
-  return 1;
-
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1598,33 +1544,7 @@ type_desc(long long*){
 ///
 int
 _conversion(unsigned long long* _val, const string & in){
-
-  char * tail = 0 ;
-
-  errno = 0;
-  unsigned long long int inval = strtoull(in.c_str(), &tail, 0);
-  if (errno) {
-    warn_parse("unsigned long long", in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse("unsigned long long", in, "does not represent an integer");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse("unsigned long long", in, "contains tail \"" + string(tail) + "\"");
-
-  if (inval < numeric_limits<unsigned long long>::min() ||
-      inval > numeric_limits<unsigned long long>::max() ) {
-    warn_parse("unsigned long long", in,
-               "parsed integer _value is out of the type range");
-    return -1;
-  }
-
-  *_val = (unsigned long long) inval;
-  return 1;
-
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1647,26 +1567,7 @@ type_desc(unsigned long long*){
 ///
 int
 _conversion(float* _val, const string & in){
-
-  char * tail = 0 ;
-
-  errno = 0;
-  double inval = strtod (in.c_str(), &tail);
-  if (errno) {
-    warn_parse("float", in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse("float", in, "does not represent a float number");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse("float", in, "contains tail \"" + string(tail) + "\"");
-
-  *_val = (float) inval;
-  return 1;
-
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.
@@ -1687,26 +1588,7 @@ type_desc(float*){
 ///
 int
 _conversion(double* _val, const string & in){
-
-  char * tail = 0 ;
-
-  errno = 0;
-  double inval = strtod (in.c_str(), &tail);
-  if (errno) {
-    warn_parse("double", in, "value overflow");
-    return -1;
-  }
-  if (tail == in.c_str()) {
-    warn_parse("double", in, "does not represent a double number");
-    return -1;
-  }
-
-  if (*tail != 0)
-    warn_parse("double", in, "contains tail \"" + string(tail) + "\"");
-
-  *_val = (double) inval;
-  return 1;
-
+  return num_conversion(_val, in);
 }
 
 /// Prints type name.

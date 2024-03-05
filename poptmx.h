@@ -61,11 +61,11 @@
 /// - The same option name (short or long) cannot be used in different
 ///   entries.
 /// - The same element can be used more than once in the CLI input phrase
-///   only if the corresponding variable is an std::vector. In this case each
+///   only if the corresponding variable is an std::deque. In this case each
 ///   next appearance of the element in the CLI phrase will add the element
-///   to the end of the vector.
+///   to the end of the deque.
 /// - The CLI input processing is case sensitive.
-  
+
 // TODO: Separate all functions in OptionTable into the ones which
 // can be used only before or only after parse() called.
 
@@ -78,20 +78,8 @@
 
 #include<iostream>
 #include<string>
-#include<vector>
+#include<deque>
 #include<list>
-
-
-#ifdef _WIN32
-#  pragma warning(disable: 4251)
-#  ifdef POPTMX_EXPORTS
-#    define POPTMX_API __declspec(dllexport)
-#  else
-#    define POPTMX_API __declspec(dllimport)
-#  endif
-#else
-#  define POPTMX_API
-#endif
 
 
 
@@ -106,7 +94,7 @@ namespace poptmx {
 
 
 /// Error type
-class POPTMX_API Err{
+class Err{
 
 public:
   /// Error severity
@@ -125,7 +113,7 @@ public:
 
   /// Constructor
   Err(ErrTp _terr, const std::string & mod, const std::string & msg);
-  void report() const ;     ///< Reports the error
+  void report() const ;			///< Reports the error
 
 };
 
@@ -162,36 +150,36 @@ warn(const std::string & mod, const std::string & msg){
 
 /// Type of the element in the table of the known options.
 typedef enum {
-  OPTION,           ///< Option
-  ARGUMENT,           ///< Argument
-  NOTE,             ///< Note
-  MAN,              ///< Manual page
-  // ALIAS,           //< Alias to the option(s)
-  PROC              ///< Post-parse processing function
+  OPTION,						///< Option
+  ARGUMENT,						///< Argument
+  NOTE,							///< Note
+  MAN,							///< Manual page
+  // ALIAS,						//< Alias to the option(s)
+  PROC							///< Post-parse processing function
 } Kind;
 
 
 /// Single entry in the option table. Represents all types of entries.
-class POPTMX_API Option {
+class Option {
 
 public:
 
-  void * val;         ///< Pointer to the value the parser to update.
-  int counter;          ///< Number of parser already invoked.
-  bool isarray;         ///< Tells if the entry represents the array.
+  void * val;					///< Pointer to the value the parser to update.
+  int counter;					///< Number of parser already invoked.
+  bool isarray;					///< Tells if the entry represents the array.
 
   /// Type of the entry.
-  Kind kind;          ///< Type of the entry.
+  Kind kind;					///< Type of the entry.
   std::string dflt;             ///< Default value of the option/argument.
 
   /// Function which converts the Option::acquire into the Option::val.
   int (*convert)(void*, const std::string &);
 
-  char   char_name;       ///< Short name of the option.
-  std::string long_name;    ///< Long name of the option / argument name.
-  std::string arg_desc;     ///< Description of the input type.
-  std::string short_desc;   ///< Short description.
-  std::string long_desc;    ///< Long description.
+  char   char_name;				///< Short name of the option.
+  std::string long_name;		///< Long name of the option / argument name.
+  std::string arg_desc;			///< Description of the input type.
+  std::string short_desc;		///< Short description.
+  std::string long_desc;		///< Long description.
 
   Option( Kind _kind, void * _val, int (*_convert)(void*, const std::string &),
       const char _char_name, const std::string & _long_name,
@@ -199,14 +187,14 @@ public:
       const std::string & _arg_desc, const std::string & _dflt,
           bool _isarray);
 
-  bool parse(const std::string & acquire);  ///< Parser: invokes Option::convert.
+  bool parse(const std::string & acquire);	///< Parser: invokes Option::convert.
   /// Description of the entry: general form;
   std::string delim_opt(const std::string & delim, bool keep_format=false) const ;
   std::string desc(bool keep_format=false) const ; ///< Prints the description.
-  bool require_arg() const;   ///< Tells if the entry requires an argument for parsing.
+  bool require_arg() const;		///< Tells if the entry requires an argument for parsing.
 
-  void usage() const ;  ///< Usage.
-  void Usage() const ;  ///< Verbose usage.
+  void usage() const ;	///< Usage.
+  void Usage() const ;	///< Verbose usage.
 
   void help(const int descwidth=0, const int argwidth=0) const; ///< Help.
 
@@ -231,11 +219,11 @@ public:
 /// the verbose help message and will go to the manual pages. The variables
 /// ending with "*_desc" would be shown in both verbose and non-verbose help
 /// messages.
-class POPTMX_API OptionTable {
+class OptionTable {
 
 private:
 
-  mutable std::list<Option> options;  ///< The table containing all options, arguments, etc.
+  mutable std::list<Option> options;	///< The table containing all options, arguments, etc.
   typedef std::list<Option>::iterator ListO; ///< Just to short the text
 
   /// Short description of the program. If the table is included into
@@ -256,13 +244,13 @@ private:
   /// Program name (as invoked).
   std::string general_name;
 
-  bool helpme;          ///< To be used for the help, if none is provided.
-  bool useme;         ///< To be used for the usage, if none is provided.
-  bool beverb;        ///< To be used for the verbose, if none is provided.
-  bool * auto_help;       ///< Indicates that autohelp was used.
-  bool * auto_use;        ///< Indicates that autouse was used.
-  bool * auto_verb;       ///< Indicates that autoverb was used.
- 
+  bool helpme;					///< To be used for the help, if none is provided.
+  bool useme;					///< To be used for the usage, if none is provided.
+  bool beverb;				///< To be used for the verbose, if none is provided.
+  bool * auto_help;				///< Indicates that autohelp was used.
+  bool * auto_use;				///< Indicates that autouse was used.
+  bool * auto_verb;				///< Indicates that autoverb was used.
+
 
   ListO find(const void * _val) const; ///< Finds entry by value
   ListO find(char _char_name) const; ///< Finds entry by short name
@@ -270,7 +258,7 @@ private:
   ListO find() const; ///< Finds first parse-able argument.
   ListO has_array() const; ///< True if the table has an array argument.
 
-  OptionTable & add(const Option & opt);  ///< Adds the entry in to the table
+  OptionTable & add(const Option & opt);	///< Adds the entry in to the table
 
   static const std::string manLN; ///< The key phrase which triggers the man()
 
@@ -313,7 +301,7 @@ public:
 
   /// Simplified interface to add multiple-appearing option into the table.
   template<class BClass> inline OptionTable &
-  add( Kind _kind, std::vector<BClass> * _val,
+  add( Kind _kind, std::deque<BClass> * _val,
      const char _char_name, const std::string & _long_name,
      const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
@@ -325,7 +313,7 @@ public:
 
   /// Simplified interface to add multiple-appearing argument into the table.
   template<class BClass> inline OptionTable &
-  add( Kind _kind, std::vector<BClass> * _val,
+  add( Kind _kind, std::deque<BClass> * _val,
      const std::string & _long_name,
      const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt="");
 
@@ -334,11 +322,11 @@ public:
   add( Kind _kind, const std::string & _short_desc, const std::string & _long_desc="");
 
   OptionTable &
-  add_verbose(bool *_beverb=0); ///< Includes standard verbose option.
+  add_verbose(bool *_beverb=0);	///< Includes standard verbose option.
 
   OptionTable &
   add_help(bool *_helpme=0); ///< Includes standard help option.
-  
+
   OptionTable &
   add_usage(bool *_useme=0); ///< Includes standard usage option.
 
@@ -379,69 +367,62 @@ public:
   /// Returns the description of the entry with the value.
   std::string desc(const void * _val) const ;
 
-  int size() const;       ///< Size of the table
+  int size() const;				///< Size of the table
 
-  void usage() const; ///< Constructs the usage message.
-  void Usage() const; ///< Constructs the verbose usage message.
-  void help() const;    ///< Constructs the help message.
-  void Help() const;    ///< Constructs the verbose help message.
-  void man() const;   ///< Manages man pages
+  void usage() const;	///< Constructs the usage message.
+  void Usage() const;	///< Constructs the verbose usage message.
+  void help() const;		///< Constructs the help message.
+  void Help() const;		///< Constructs the verbose help message.
+  void man() const;		///< Manages man pages
 
-  std::string name() const ;  ///< Returns the command name as invoked.
+  std::string name() const ;	///< Returns the command name as invoked.
   void name(const std::string & _name); ///< Sets the command name.
 
 };
 
 
 
+int _conversion(bool* _val, const std::string &);
+std::string type_desc (bool*);
 
+int _conversion (std::string * _val, const std::string & in);
+std::string type_desc (std::string*);
 
+int _conversion(char * _val, const std::string & in);
+std::string type_desc(char*);
 
+int _conversion(unsigned char * _val, const std::string & in);
+std::string type_desc(unsigned char*);
 
+int _conversion(short * _val, const std::string & in);
+std::string type_desc(short*);
 
+int _conversion(unsigned short * _val, const std::string & in);
+std::string type_desc(unsigned short*);
 
+int _conversion(int * _val, const std::string & in);
+std::string type_desc(int*);
 
-int POPTMX_API _conversion (bool* _val, const std::string &);
-std::string POPTMX_API type_desc (bool*);
+int _conversion(unsigned int * _val, const std::string & in);
+std::string type_desc(unsigned int*);
 
-int POPTMX_API _conversion (std::string * _val, const std::string & in);
-std::string POPTMX_API type_desc (std::string*);
+int _conversion(long* _val, const std::string & in);
+std::string type_desc(long*);
 
-int POPTMX_API _conversion(char * _val, const std::string & in);
-std::string POPTMX_API type_desc(char*);
+int _conversion(unsigned long* _val, const std::string & in);
+std::string type_desc(unsigned long*);
 
-int POPTMX_API _conversion(unsigned char * _val, const std::string & in);
-std::string POPTMX_API type_desc(unsigned char*);
+int _conversion(long long* _val, const std::string & in);
+std::string type_desc(long long*);
 
-int POPTMX_API _conversion(short * _val, const std::string & in);
-std::string POPTMX_API type_desc(short*);
+int _conversion(unsigned long long* _val, const std::string & in);
+std::string type_desc(unsigned long long*);
 
-int POPTMX_API _conversion(unsigned short * _val, const std::string & in);
-std::string POPTMX_API type_desc(unsigned short*);
+int _conversion(float* _val, const std::string & in);
+std::string type_desc(float*);
 
-int POPTMX_API _conversion(int * _val, const std::string & in);
-std::string POPTMX_API type_desc(int*);
-
-int POPTMX_API _conversion(unsigned int * _val, const std::string & in);
-std::string POPTMX_API type_desc(unsigned int*);
-
-int POPTMX_API _conversion(long* _val, const std::string & in);
-std::string POPTMX_API type_desc(long*);
-
-int POPTMX_API _conversion(unsigned long* _val, const std::string & in);
-std::string POPTMX_API type_desc(unsigned long*);
-
-int POPTMX_API _conversion(long long* _val, const std::string & in);
-std::string POPTMX_API type_desc(long long*);
-
-int POPTMX_API _conversion(unsigned long long* _val, const std::string & in);
-std::string POPTMX_API type_desc(unsigned long long*);
-
-int POPTMX_API _conversion(float* _val, const std::string & in);
-std::string POPTMX_API type_desc(float*);
-
-int POPTMX_API _conversion(double* _val, const std::string & in);
-std::string POPTMX_API type_desc(double*);
+int _conversion(double* _val, const std::string & in);
+std::string type_desc(double*);
 
 
 
@@ -523,7 +504,7 @@ arr_conversion(void* _val, const std::string & in){
   BClass var;
   int returned = conversion<BClass>(&var, in);
   if (returned >= 0)
-  ( (std::vector<BClass> *) _val ) ->push_back(var);
+  ( (std::deque<BClass> *) _val ) ->push_back(var);
   return returned;
 }
 
@@ -540,7 +521,7 @@ arr_conversion(void* _val, const std::string & in){
 /// @param _long_desc Option::long_desc
 ///
 template<class BClass> inline OptionTable &
-OptionTable::add( Kind _kind, std::vector<BClass> * _val,
+OptionTable::add( Kind _kind, std::deque<BClass> * _val,
           const char _char_name, const std::string & _long_name,
           const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != OPTION )
@@ -561,7 +542,7 @@ OptionTable::add( Kind _kind, std::vector<BClass> * _val,
 /// @param _long_desc Option::long_desc
 ///
 template<class BClass> inline OptionTable &
-OptionTable::add( Kind _kind, std::vector<BClass> * _val,
+OptionTable::add( Kind _kind, std::deque<BClass> * _val,
           const std::string & _long_name,
           const std::string & _short_desc, const std::string & _long_desc, const std::string & _dflt){
   if ( _kind != ARGUMENT )
