@@ -82,6 +82,18 @@
 #include<list>
 
 
+#ifdef _WIN32
+#  pragma warning(disable: 4251)
+#  ifdef POPTMX_EXPORTS
+#    define POPTMX_API __declspec(dllexport)
+#  else
+#    define POPTMX_API __declspec(dllimport)
+#  endif
+#else
+#  define POPTMX_API
+#endif
+
+
 
 namespace poptmx {
 
@@ -94,7 +106,7 @@ namespace poptmx {
 
 
 /// Error type
-class Err{
+class POPTMX_API Err{
 
 public:
   /// Error severity
@@ -160,7 +172,7 @@ typedef enum {
 
 
 /// Single entry in the option table. Represents all types of entries.
-class Option {
+class POPTMX_API Option {
 
 public:
 
@@ -219,7 +231,7 @@ public:
 /// the verbose help message and will go to the manual pages. The variables
 /// ending with "*_desc" would be shown in both verbose and non-verbose help
 /// messages.
-class OptionTable {
+class POPTMX_API OptionTable {
 
 private:
 
@@ -382,47 +394,47 @@ public:
 
 
 
-int _conversion(bool* _val, const std::string &);
-std::string type_desc (bool*);
+int POPTMX_API _conversion(bool* _val, const std::string &);
+std::string POPTMX_API type_desc (bool*);
 
-int _conversion (std::string * _val, const std::string & in);
-std::string type_desc (std::string*);
+int POPTMX_API _conversion (std::string * _val, const std::string & in);
+std::string POPTMX_API type_desc (std::string*);
 
-int _conversion(char * _val, const std::string & in);
-std::string type_desc(char*);
+int POPTMX_API _conversion(char * _val, const std::string & in);
+std::string POPTMX_API type_desc(char*);
 
-int _conversion(unsigned char * _val, const std::string & in);
-std::string type_desc(unsigned char*);
+int POPTMX_API _conversion(unsigned char * _val, const std::string & in);
+std::string POPTMX_API type_desc(unsigned char*);
 
-int _conversion(short * _val, const std::string & in);
-std::string type_desc(short*);
+int POPTMX_API _conversion(short * _val, const std::string & in);
+std::string POPTMX_API type_desc(short*);
 
-int _conversion(unsigned short * _val, const std::string & in);
-std::string type_desc(unsigned short*);
+int POPTMX_API _conversion(unsigned short * _val, const std::string & in);
+std::string POPTMX_API type_desc(unsigned short*);
 
-int _conversion(int * _val, const std::string & in);
-std::string type_desc(int*);
+int POPTMX_API _conversion(int * _val, const std::string & in);
+std::string POPTMX_API type_desc(int*);
 
-int _conversion(unsigned int * _val, const std::string & in);
-std::string type_desc(unsigned int*);
+int POPTMX_API _conversion(unsigned int * _val, const std::string & in);
+std::string POPTMX_API type_desc(unsigned int*);
 
-int _conversion(long* _val, const std::string & in);
-std::string type_desc(long*);
+int POPTMX_API _conversion(long* _val, const std::string & in);
+std::string POPTMX_API type_desc(long*);
 
-int _conversion(unsigned long* _val, const std::string & in);
-std::string type_desc(unsigned long*);
+int POPTMX_API _conversion(unsigned long* _val, const std::string & in);
+std::string POPTMX_API type_desc(unsigned long*);
 
-int _conversion(long long* _val, const std::string & in);
-std::string type_desc(long long*);
+int POPTMX_API _conversion(long long* _val, const std::string & in);
+std::string POPTMX_API type_desc(long long*);
 
-int _conversion(unsigned long long* _val, const std::string & in);
-std::string type_desc(unsigned long long*);
+int POPTMX_API _conversion(unsigned long long* _val, const std::string & in);
+std::string POPTMX_API type_desc(unsigned long long*);
 
-int _conversion(float* _val, const std::string & in);
-std::string type_desc(float*);
+int POPTMX_API _conversion(float* _val, const std::string & in);
+std::string POPTMX_API type_desc(float*);
 
-int _conversion(double* _val, const std::string & in);
-std::string type_desc(double*);
+int POPTMX_API _conversion(double* _val, const std::string & in);
+std::string POPTMX_API type_desc(double*);
 
 
 

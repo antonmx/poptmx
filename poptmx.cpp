@@ -379,10 +379,7 @@ Option::Help() const {
   const int width = get_terminal_width();
 
   if (kind == OPTION) {
-    cout << sindent << delim_opt(", ") << sindent << arg_desc;
-    if (!dflt.empty())
-      cout << "=" << dflt;
-    cout << endl;
+    cout << sindent << delim_opt(", ") << sindent << arg_desc << endl;
     if ( ! short_desc.empty()) {
       prefix_out( print_table(short_desc, width-2*indent), sindent+sindent);
       cout << endl;
@@ -392,10 +389,7 @@ Option::Help() const {
       cout << endl;
     }
   } else if (kind == ARGUMENT) {
-    cout << sindent << "<" << long_name << sindent << "(" << arg_desc;
-    if (!dflt.empty())
-      cout << "=" << dflt;
-    cout << ")>" << endl;
+    cout << sindent << "<" << long_name << sindent << "(" << arg_desc << ")>" << endl;
     if ( ! short_desc.empty()) {
       prefix_out( print_table(short_desc, width-2*indent), sindent+sindent);
       cout << endl;
@@ -671,7 +665,7 @@ OptionTable::parse(int argc, char *argv[]){
   if ( !argv )
     throw_error("parse parameters", "Zero-pointer to the parameters' array.");
   if ( argc < 1 )
-    throw_error("parse parameters", "Zero argc.");
+    throw_error("parse parameters", "argc is not what it is meant to be.");
 
   const std::list<std::string> Argv(argv, argv+argc);
   const ListS cliend = Argv.end();
